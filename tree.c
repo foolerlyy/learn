@@ -42,9 +42,8 @@ typedef struct{
     QNode *rear;
 }Queue;
 
-Status InitBiTree(BiTree *T);
-Status DestroyBiTree(BiTree *T);
 Status CreateBiTree(BiTree *T);
+Status DestroyBiTree(BiTree *T);
 Status outElem(ElemType  e);
 Status PreOrderTraverse(BiTree T,Status (*visit)(ElemType ));
 Status InOrderTraverse(BiTree T,Status (*visit)(ElemType ));
@@ -73,6 +72,7 @@ int main()
 {
     BiTree root;
     CreateBiTree(&root);
+    
     LevelOrderTraverse(root,outElem);   printf("\n");
     
     PreOrderTraverse(root,outElem);     printf("\n");
@@ -87,10 +87,11 @@ int main()
     
     F_PostOrderTraverse(root,outElem);  printf("\n");
     
-    
+    DestroyBiTree(&root);
     system("pause");
     return 0;
 }
+
 Status CreateBiTree(BiTree *T)
 {
        BiTree p;
@@ -107,6 +108,23 @@ Status CreateBiTree(BiTree *T)
             CreateBiTree(&(p->rchild));
        }
        return OK;
+}
+Status DestroyBiTree(BiTree *T)
+{
+       Queue Q;
+       QElemType P;
+       InitQueue(&Q);
+       EnQueue(&Q,*T);
+       while(!QueueEmpty(&Q))
+       {
+             DeQueue(&Q,&P);
+             if(P->lchild)
+               EnQueue(&Q,P->lchild);
+             if(P->rchild)
+               EnQueue(&Q,P->rchild);
+             free(P);
+       }
+       DestroyQueue(&Q);
 }
 Status outElem(ElemType  e)
 {
@@ -200,56 +218,44 @@ Status F_InOrderTraverse(BiTree T,Status (*visit)(ElemType ))
         }
         DestroyStack(&S);
 }
-/*Status F_PostOrderTraverse(BiTree T,Status (*visit)(ElemType ))
-{
-        SElemType p;
-        SqStack S;
-        int flag=0;
-        InitStack(&S);
-        Push(&S,T);
-        while(!StackEmpty(&S))
-        {
-          while(GetTop(&S,&p)&&p->lchild)   {Push(&S,p->lchild);flag=0;}
-           
-          if(!StackEmpty(&S))
-           {
-             GetTop(&S,&p);
-             if(!p->rchild && !p->lchild)
-             {
-               if(!visit(p->data)) return ERROR;
-               Pop(&S,&p);
-               GetTop(&S,&p);
-               if(flag) p->rchild=NULL;
-               else p->lchild=NULL;
-             }
-             else {Push(&S,p->rchild);flag=1;}
-           }
-        }
-        DestroyStack(&S);
-}*/
 Status F_PostOrderTraverse(BiTree T,Status (*visit)(ElemType ))
 {
         SElemType p;
         SqStack S;
-        int a[100]={0},top=0;
+        int flag[100],top=1;
+        memset(flag,0,100);
         InitStack(&S);
         p=T;
-        while(p||!StackEmpty(&S))
+        while(p)
         {
-         if(p) 
-         {
-          Push(&S,p); a[top]=2;top++;
-          p=p->lchild;
-         }
-         else
-         {
-          Pop(&S,&p);top--;
-          if(!visit(p->data)) return ERROR;
-          p=p->rchild;
-         }
+            Push(&S,p);
+            p=p->lchild;
+            flag[top++]=0;
         }
+        while(!StackEmpty(&S))
+          {
+             GetTop(&S,&p);
+             if( !(p->rchild) || flag[top-1] )
+             {
+              Pop(&S,&p);
+              top--;
+              if(!visit(p->data)) return ERROR;
+             }
+             else
+             {
+                  flag[top-1]=1;
+                  p=p->rchild;
+                  while(p)
+                  {
+                   Push(&S,p);
+                   p=p->lchild;
+                   flag[top++]=0;
+                  }
+             }
+          }
         DestroyStack(&S);
 }
+
 
 Status InitStack(SqStack *S)
 {
